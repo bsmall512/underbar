@@ -217,21 +217,18 @@
 
 
   // Determine whether all of the elements match a truth test.
-
+  // nando says just check for one false value and move on
   _.every = function(collection, iterator) {
     // TIP: Try re-using reduce() here.
-    var num = 0;
-    if (collection.length == 0 ) 
-    { 
-      return true; 
-    };
-    _.each(collection,function(item){
-      
-      if (!iterator) { if (item){num++} }
-      else if (iterator(item)) { num++ }
-    })
-    if (num < collection.length) { return false }
-    else return true;
+    
+    var result = true;
+    for(var i = 0; i < collection.length; i++){
+      if (iterator === undefined) {
+        if (!collection[i]) result = false;
+      }
+      else if (!iterator(collection[i])) result = false;
+    }
+    return result;
     
   };
 
@@ -239,13 +236,24 @@
   // provided, provide a default one
   
   _.some = function(collection, iterator) {
+
+    for(var i in collection) {
+      var aux = []
+      aux[0] = collection[i]
+      if(_.every(aux,iterator)){
+        return true;
+      }
+    }
+    return false
     // TIP: There's a very clever way to re-use every() here.
-    var x = _.every(collection);
-
+    _.every(collection, iterator);
+    //console.log(numArr);
     if (collection.length == 0) { return false; }
-    if (x.num > 0) { return true };
-     
-
+    if (numArr[numArr.length - 1] > 0) { return true };
+    if (numArr[numArr.length - 1] == 0 ) { return false };
+    // if (!num) { return false; }
+    // if (num > 0) { return true };
+    // if (num == 0 ) { return false };
   };
 
 
@@ -268,11 +276,49 @@
   //     bla: "even more stuff"
   //   }); // obj1 now contains key1, key2, key3 and bla
   _.extend = function(obj) {
+    //console.log(length(obj));
+    //return obj;
+    // for(var obj in arguments) {console.log(obj);}
+    // var obj2 = Object.create(obj.prototype);
+    // return obj2;
+    // var obj2 = {};
+    // for(i = 0; i < arguments.length; i++)
+    //   { for (var item in arguments[i])
+    //     arguments[0] = arguments[i];}
+    // return
+    var target = {};
+    var sources = [];
+    target = obj;
+    //if (arguments[1]) {sources = arguments.slice(1, arguments.length - 1);};
+    for(var k = 1; k < arguments.length; k++) {
+      sources.push(arguments[k]);
+    }
+    for(var i in sources){
+      for(var j in sources[i]){
+        target[j] = sources[i][j];
+      }
+    }
+    // console.log(target);
+    return target;
   };
 
   // Like extend, but doesn't ever overwrite a key that already
   // exists in obj
   _.defaults = function(obj) {
+    var target = {};
+    var sources = [];
+    target = obj;
+    for(var k = 1; k < arguments.length; k++) {
+      sources.push(arguments[k]);
+    }
+    for(var i in sources){
+      for(var j in sources[i]){
+        if (!target.hasOwnProperty(j)){  
+          target[j] = sources[i][j];
+        }
+      }
+    }
+    return target;
   };
 
 
@@ -315,7 +361,25 @@
   // _.memoize should return a function that, when called, will check if it has
   // already computed the result for the given argument and return that value
   // instead if possible.
+
+
   _.memoize = function(func) {
+
+    var memo = {};
+
+    return function(a, b){
+      var value;
+      memo[a] = memo[a] || {};
+
+      if (a in memo && b in memo[a]){
+        value = memo[a][b];
+      } else {
+        value = func.apply(this, arguments);
+        memo[a][b] = value;
+      }
+      return value;
+    }
+  
   };
 
   // Delays a function for the given number of milliseconds, and then calls
@@ -325,6 +389,11 @@
   // parameter. For example _.delay(someFunction, 500, 'a', 'b') will
   // call someFunction('a', 'b') after 500ms
   _.delay = function(func, wait) {
+    
+   var args = Array.prototype.slice.call(arguments, 2);
+   return setTimeout(function(){
+    return func.apply(null, args);
+   }, wait);
   };
 
 
@@ -339,6 +408,36 @@
   // input array. For a tip on how to make a copy of an array, see:
   // http://mdn.io/Array.prototype.slice
   _.shuffle = function(array) {
+    //var alreadyUsed = [];
+    var shuffled = [];
+    var arr = array.slice();
+    var min = 0;
+    var theSame = true;
+    
+    var runIt = function(){
+
+      var max = array.length;
+
+      for(var i = 0; i < array.length; i++){
+        var randomNumber = Math.floor(Math.random() * max);
+        shuffled.push(arr.splice(randomNumber, 1)[0]);
+        max--;
+      }
+    }
+    runIt();
+    var checkIt = function (){
+      for(var k = 0; k < array.length; k++){
+        if (shuffled[k] !== array[k]) { theSame = false; }
+      }
+      if (theSame) { 
+        arr = array.slice();
+        shuffled = [];
+        runIt();
+        checkIt();
+       }
+    }
+    checkIt();
+    return shuffled;
   };
 
 
